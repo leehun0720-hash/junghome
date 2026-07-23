@@ -248,8 +248,8 @@
       <a href="#books">저서</a>
       <a href="#research">연구</a>
       <a href="#youtube">유튜브</a>
-      <a href="#tenai">Ten AI</a>
-      <a href="mailto:ten@tenspace.co.kr" class="contact">연락</a>
+      <a href="#contact">연락</a>
+      <a href="mailto:ten@tenspace.co.kr" class="contact">이메일</a>
     </nav>
     <button class="menu-toggle" id="menuToggle" aria-label="메뉴 열기"><span></span></button>
   </header>
@@ -263,8 +263,8 @@
     <a href="#books">저서</a>
     <a href="#research">연구</a>
     <a href="#youtube">유튜브</a>
-    <a href="#tenai">Ten AI</a>
-    <a href="mailto:ten@tenspace.co.kr" class="contact">연락</a>
+    <a href="#contact">연락</a>
+    <a href="mailto:ten@tenspace.co.kr" class="contact">이메일</a>
   </div>
 
   <main id="main">
@@ -275,7 +275,7 @@
         <h1>복잡한 AI를<br>누구나 <em>쓰는 말</em>로</h1>
         <p class="hero-copy">금융·뉴미디어에서 출발해 AI 경영과 지식재산으로 영역을 넓혀온 실무가. 텐에이아이(Ten AI) 대표이사 정원훈입니다.</p>
         <div class="actions">
-          <a href="#tenai" class="btn primary">Ten AI 어시스턴트 →</a>
+          <a href="#contact" class="btn primary">연락하기 →</a>
           <a href="mailto:chungwonhoon@tenai.kr" class="btn">이메일 보내기 ↗</a>
         </div>
       </div>
@@ -560,53 +560,11 @@
       </div>
     </section>
 
-    <!-- TEN AI ASSISTANT -->
-    <section class="block shell" id="tenai">
+    <!-- CONTACT -->
+    <section class="block shell" id="contact">
       <div class="section-head">
-        <h2>Ten AI</h2>
-        <p>API 키를 설정하고 Ten AI 어시스턴트와 대화를 시작하세요.</p>
-      </div>
-
-      <!-- 관리자 로그인 -->
-      <div class="admin-login" id="adminLogin">
-        <h3>🔐 관리자 로그인</h3>
-        <p class="desc">관리자 계정으로 로그인하면 채팅 API 키를 설정할 수 있습니다.</p>
-        <label for="adminId">관리자 ID</label>
-        <div class="input-row" style="margin-bottom:12px;">
-          <input type="text" id="adminIdInput" placeholder="관리자 아이디를 입력하세요" autocomplete="off">
-        </div>
-        <label for="adminPw">비밀번호</label>
-        <div class="input-row">
-          <input type="password" id="adminPwInput" placeholder="비밀번호를 입력하세요" autocomplete="off">
-          <button class="login-btn" id="adminLoginBtn">로그인</button>
-        </div>
-        <p class="status" id="adminLoginStatus"></p>
-        <div id="adminLogoutArea" style="display:none; margin-top:16px;">
-          <button class="logout-btn" id="adminLogoutBtn">로그아웃</button>
-        </div>
-      </div>
-
-      <!-- 설정창 (관리자만 볼 수 있음) -->
-      <div class="tenai-settings" id="tenaiSettings">
-        <h3>⚙️ API 설정</h3>
-        <p class="desc">API 키는 서버(Netlify 환경변수 <code>BYTEPLUS_API_KEY</code>)에서 안전하게 관리됩니다. 브라우저에는 키가 저장·노출되지 않습니다. 아래 버튼으로 연결 상태를 확인할 수 있습니다.</p>
-        <div class="input-row">
-          <button class="save-btn" id="testConnBtn">연결 상태 확인</button>
-        </div>
-        <p class="status" id="apiStatus"></p>
-      </div>
-
-      <!-- 채팅창 -->
-      <div class="tenai-chat" id="tenaiChat">
-        <h3>💬 Ten AI 어시스턴트</h3>
-        <p class="desc">정원훈의 AI 경영·지식재산·기술 통역 전문 어시스턴트입니다.</p>
-        <div class="chat-messages" id="chatMessages">
-          <div class="msg assistant">안녕하세요! Ten AI 어시스턴트입니다. 무엇을 도와드릴까요?</div>
-        </div>
-        <div class="chat-input-row">
-          <input type="text" id="chatInput" placeholder="메시지를 입력하세요...">
-          <button class="send-btn" id="sendBtn">전송</button>
-        </div>
+        <h2>정원훈 / TenAI<br>텐에이아이</h2>
+        <p>강의·자문·집필을 의뢰하고 싶다면 언제든 연락 주세요.<br><a href="mailto:ten@tenspace.co.kr" style="color:var(--blue); font:12px var(--mono); display:inline-block; margin-top:14px;">ten@tenspace.co.kr ↗</a></p>
       </div>
     </section>
 
@@ -669,174 +627,6 @@
       });
     }, { rootMargin: '-40% 0px -55% 0px' });
     sections.forEach(s => observer.observe(s));
-
-    // ============================================================
-    // ADMIN LOGIN
-    // ============================================================
-    const ADMIN_ID = 'admin';
-    const ADMIN_PW = 'tenai2025!';
-
-    const adminIdInput = document.getElementById('adminIdInput');
-    const adminPwInput = document.getElementById('adminPwInput');
-    const adminLoginBtn = document.getElementById('adminLoginBtn');
-    const adminLogoutBtn = document.getElementById('adminLogoutBtn');
-    const adminLoginStatus = document.getElementById('adminLoginStatus');
-    const adminLogoutArea = document.getElementById('adminLogoutArea');
-    const tenaiSettings = document.getElementById('tenaiSettings');
-
-    let isAdmin = sessionStorage.getItem('tenai_admin') === 'true';
-
-    function updateAdminUI() {
-      if (isAdmin) {
-        adminIdInput.disabled = true;
-        adminPwInput.disabled = true;
-        adminLoginBtn.style.display = 'none';
-        adminLogoutArea.style.display = 'block';
-        tenaiSettings.classList.add('visible');
-        adminLoginStatus.textContent = '✓ 관리자로 로그인되었습니다.';
-        adminLoginStatus.className = 'status success';
-      } else {
-        adminIdInput.disabled = false;
-        adminPwInput.disabled = false;
-        adminLoginBtn.style.display = '';
-        adminLogoutArea.style.display = 'none';
-        tenaiSettings.classList.remove('visible');
-        adminLoginStatus.textContent = '';
-        adminLoginStatus.className = 'status';
-      }
-    }
-
-    adminLoginBtn.addEventListener('click', () => {
-      const id = adminIdInput.value.trim();
-      const pw = adminPwInput.value.trim();
-      if (id === ADMIN_ID && pw === ADMIN_PW) {
-        isAdmin = true;
-        sessionStorage.setItem('tenai_admin', 'true');
-        updateAdminUI();
-        adminPwInput.value = '';
-      } else {
-        adminLoginStatus.textContent = '아이디 또는 비밀번호가 올바르지 않습니다.';
-        adminLoginStatus.className = 'status error';
-      }
-    });
-
-    adminPwInput.addEventListener('keydown', e => {
-      if (e.key === 'Enter') {
-        e.preventDefault();
-        adminLoginBtn.click();
-      }
-    });
-
-    adminLogoutBtn.addEventListener('click', () => {
-      isAdmin = false;
-      sessionStorage.removeItem('tenai_admin');
-      updateAdminUI();
-    });
-
-    // ============================================================
-    // TEN AI ASSISTANT
-    // ============================================================
-    const apiStatus = document.getElementById('apiStatus');
-    const chatInput = document.getElementById('chatInput');
-    const sendBtn = document.getElementById('sendBtn');
-    const chatMessages = document.getElementById('chatMessages');
-    const testConnBtn = document.getElementById('testConnBtn');
-
-    // 서버 프록시 주소 (키는 서버에서만 사용됨)
-    const CHAT_ENDPOINT = '/.netlify/functions/chat';
-
-    function updateUI() {
-      chatInput.disabled = false;
-      sendBtn.disabled = false;
-      chatInput.placeholder = '메시지를 입력하세요...';
-    }
-
-    // 관리자용: 서버 연결/키 설정 상태 확인
-    if (testConnBtn) {
-      testConnBtn.addEventListener('click', async () => {
-        apiStatus.textContent = '확인 중...';
-        apiStatus.className = 'status';
-        try {
-          const res = await fetch(CHAT_ENDPOINT, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ message: '연결 테스트' })
-          });
-          if (res.ok) {
-            apiStatus.textContent = '✓ 서버 연결 정상. API 키가 설정되어 있습니다.';
-            apiStatus.className = 'status success';
-          } else {
-            const err = await res.json().catch(() => ({}));
-            apiStatus.textContent = '⚠ ' + (err.error || ('오류 코드 ' + res.status));
-            apiStatus.className = 'status error';
-          }
-        } catch (e) {
-          apiStatus.textContent = '⚠ 서버에 연결할 수 없습니다: ' + e.message;
-          apiStatus.className = 'status error';
-        }
-      });
-    }
-
-    async function sendMessage() {
-      const message = chatInput.value.trim();
-      if (!message) return;
-
-      // Add user message
-      addMessage(message, 'user');
-      chatInput.value = '';
-      sendBtn.disabled = true;
-      chatInput.disabled = true;
-
-      // Add loading message
-      const loadingMsg = addMessage('생각 중...', 'system');
-
-      try {
-        const response = await fetch(CHAT_ENDPOINT, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ message })
-        });
-
-        // Remove loading message
-        loadingMsg.remove();
-
-        if (!response.ok) {
-          const err = await response.json().catch(() => ({}));
-          throw new Error(err.error || ('요청 실패 (상태 코드: ' + response.status + ')'));
-        }
-
-        const data = await response.json();
-        addMessage(data.reply, 'assistant');
-      } catch (err) {
-        loadingMsg.remove();
-        addMessage('오류: ' + err.message, 'system');
-      } finally {
-        sendBtn.disabled = false;
-        chatInput.disabled = false;
-        chatInput.focus();
-      }
-    }
-
-    function addMessage(text, role) {
-      const div = document.createElement('div');
-      div.className = 'msg ' + role;
-      div.textContent = text;
-      chatMessages.appendChild(div);
-      chatMessages.scrollTop = chatMessages.scrollHeight;
-      return div;
-    }
-
-    sendBtn.addEventListener('click', sendMessage);
-    chatInput.addEventListener('keydown', e => {
-      if (e.key === 'Enter' && !e.shiftKey) {
-        e.preventDefault();
-        sendMessage();
-      }
-    });
-
-    // Initialize
-    updateAdminUI();
-    updateUI();
   </script>
 </body>
 </html>
