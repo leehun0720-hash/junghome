@@ -267,33 +267,27 @@
     html.anim-fallback .anim-replay { display:none; }
     @media (max-width:768px) { .anim-replay { right:14px; bottom:14px; padding:10px 13px; } }
 
-    /* 모션 최소화를 선호하는 사용자는 모든 연출을 끄고 최종 상태로 고정.
-       단 .motion-forced(=?motion=on 으로 명시적 opt-in)일 때는 그대로 재생한다. */
+    /* ?motion=off 또는 라이브러리 로드 실패 → 연출 없이 최종 상태로 고정 */
+    html.anim-fallback .hero > div:first-child > *,
+    html.anim-fallback .hero-visual,
+    html.anim-fallback .marquee,
+    html.anim-fallback .section-head h2,
+    html.anim-fallback .section-head > p,
+    html.anim-fallback .stat,
+    html.anim-fallback .service,
+    html.anim-fallback .project,
+    html.anim-fallback .writing-item,
+    html.anim-fallback .cred-group,
+    html.anim-fallback .block > p,
+    html.anim-fallback .footer p,
+    html.anim-fallback .scrub-word {
+      opacity:1 !important; transform:none !important; filter:none !important;
+    }
+
+    /* 모션 최소화를 선호하는 사용자에게는 '완전 정지'가 아니라 순한 버전(gentle)을 준다.
+       진입 연출은 짧은 페이드로 계속 보여주고, 계속 도는 마퀴만 멈춘다. */
     @media (prefers-reduced-motion: reduce) {
-      html:not(.motion-forced) { scroll-behavior:auto; }
-      html:not(.motion-forced) *,
-      html:not(.motion-forced) *::before,
-      html:not(.motion-forced) *::after {
-        animation-duration:.001ms !important; animation-iteration-count:1 !important;
-        transition-duration:.001ms !important;
-      }
-      html:not(.motion-forced) .marquee-track { animation:none !important; }
-      html:not(.motion-forced) .anim-replay { display:none; }
-      html.anim-js:not(.motion-forced) .hero > div:first-child > *,
-      html.anim-js:not(.motion-forced) .hero-visual,
-      html.anim-js:not(.motion-forced) .marquee,
-      html.anim-js:not(.motion-forced) .section-head h2,
-      html.anim-js:not(.motion-forced) .section-head > p,
-      html.anim-js:not(.motion-forced) .stat,
-      html.anim-js:not(.motion-forced) .service,
-      html.anim-js:not(.motion-forced) .project,
-      html.anim-js:not(.motion-forced) .writing-item,
-      html.anim-js:not(.motion-forced) .cred-group,
-      html.anim-js:not(.motion-forced) .block > p,
-      html.anim-js:not(.motion-forced) .footer p,
-      html.anim-js:not(.motion-forced) .scrub-word {
-        opacity:1 !important; transform:none !important; filter:none !important;
-      }
+      html:not(.motion-forced) .marquee-track { animation-play-state:paused; }
     }
   </style>
 
@@ -734,20 +728,32 @@
     const ST      = window.ScrollTrigger;
     const MO      = window.Motion;
     const AN      = window.anime;
-    // ?motion=on (또는 localStorage.forceMotion='1') 이면 접근성 설정을 덮어쓰고 강제 재생
-    const FORCED  = root.classList.contains('motion-forced');
-    const REDUCED = window.matchMedia('(prefers-reduced-motion: reduce)').matches && !FORCED;
+    const FORCED = root.classList.contains('motion-forced');   // ?motion=on
+    const OFF    = /[?&]motion=off/.test(location.search);      // ?motion=off → 연출 끄기
 
-    // GSAP이 없거나 사용자가 모션 최소화를 원하면 → 원본 그대로 노출하고 종료
-    if (!G || REDUCED) {
+    // OS의 '애니메이션 효과 끄기'를 감지하면 완전히 멈추는 대신 순한 버전으로 재생한다.
+    // (완전 정지는 ?motion=off 로 명시적으로 요청할 때만)
+    const GENTLE = !FORCED && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    // GSAP이 없으면(CDN 차단 등) 원본을 그대로 노출하고 종료
+    if (!G || OFF) {
       root.classList.add('anim-fallback');
       window.playAllAnimations = function () {};
+      window.__animStatus = !G ? 'GSAP 로드 실패 — CDN이 차단되었을 수 있습니다'
+                               : '?motion=off 로 연출을 끈 상태입니다';
+      console.info('[anim] 애니메이션 미실행:', window.__animStatus);
       return;
     }
     if (ST) G.registerPlugin(ST);
 
     const EASE = 'expo.out';          // Apple 특유의 "빠르게 나가고 길게 감속"
     const REVEALS = [];               // 강제 재생 시 되돌릴 리빌 트윈 목록
+
+    // gentle 모드에서는 큰 이동·블러·스크럽을 빼고 짧은 페이드 위주로 낮춘다
+    const K = GENTLE
+      ? { mask: 0,   rise: 8,  dur: 0.5, stag: 0.02, blur: 0, parallax: false, scrub: false }
+      : { mask: 118, rise: 26, dur: 1.0, stag: 1.00, blur: 1, parallax: true,  scrub: true  };
+    const blurStr = px => K.blur ? 'blur(' + px + 'px)' : 'blur(0px)';
 
     /* ============================================================
        텍스트 분할 유틸
@@ -847,15 +853,15 @@
       .call(() => animeChars(brandChars,   { from: -10, stagger: 18, duration: 700 }), null, 0.10)
       .call(() => animeChars(eyebrowChars, { from:  12, stagger: 26 }),                null, 0.20)
       // 헤드라인 : 마스크 안에서 단어가 차례로 밀려 올라온다 (Apple 시그니처)
-      .fromTo(h1Words,   { yPercent: 118 },
-                         { yPercent: 0, duration: 1.25, stagger: 0.07 }, 0.30)
-      .fromTo(copyWords, { yPercent: 105, opacity: 0 },
-                         { yPercent: 0, opacity: 1, duration: 0.9, stagger: 0.012 }, 0.80)
-      .fromTo(actionEls, { y: 24, opacity: 0 },
-                         { y: 0, opacity: 1, duration: 0.9, stagger: 0.08 }, 1.10)
+      .fromTo(h1Words,   { yPercent: K.mask, opacity: K.mask ? 1 : 0 },
+                         { yPercent: 0, opacity: 1, duration: 1.25 * K.dur, stagger: 0.07 * K.stag }, 0.30)
+      .fromTo(copyWords, { yPercent: K.mask ? 105 : 0, opacity: 0 },
+                         { yPercent: 0, opacity: 1, duration: 0.9 * K.dur, stagger: 0.012 * K.stag }, 0.80 * K.dur)
+      .fromTo(actionEls, { y: K.rise, opacity: 0 },
+                         { y: 0, opacity: 1, duration: 0.9 * K.dur, stagger: 0.08 * K.stag }, 1.10 * K.dur)
       // 인물 사진 : 살짝 크고 흐린 상태에서 제자리로 안착
-      .fromTo(heroVisual, { opacity: 0, scale: 1.08, filter: 'blur(18px)' },
-                          { opacity: 1, scale: 1, filter: 'blur(0px)', duration: 1.6 }, 0.35)
+      .fromTo(heroVisual, { opacity: 0, scale: K.blur ? 1.08 : 1, filter: blurStr(18) },
+                          { opacity: 1, scale: 1, filter: 'blur(0px)', duration: 1.6 * K.dur }, 0.35 * K.dur)
       .call(() => animeChars(labelChars, { from: 8, stagger: 30, duration: 600 }), null, 1.25)
       .fromTo('.marquee', { opacity: 0, y: 26 },
                           { opacity: 1, y: 0, duration: 1 }, 1.20);
@@ -867,8 +873,8 @@
       const words = splitWords(h2);
       G.set(h2, { opacity: 1 });
       if (!words.length) return;
-      REVEALS.push(G.fromTo(words, { yPercent: 118 }, {
-        yPercent: 0, duration: 1.15, ease: EASE, stagger: 0.07,
+      REVEALS.push(G.fromTo(words, { yPercent: K.mask, opacity: K.mask ? 1 : 0 }, {
+        yPercent: 0, opacity: 1, duration: 1.15 * K.dur, ease: EASE, stagger: 0.07 * K.stag,
         scrollTrigger: { trigger: h2, start: 'top 88%', once: true }
       }));
     });
@@ -878,8 +884,8 @@
        ============================================================ */
     document.querySelectorAll('.section-head > p, .block > p, .footer p').forEach(p => {
       REVEALS.push(G.fromTo(p,
-        { opacity: 0, y: 22, filter: 'blur(8px)' },
-        { opacity: 1, y: 0, filter: 'blur(0px)', duration: 1.1, ease: EASE,
+        { opacity: 0, y: K.rise, filter: blurStr(8) },
+        { opacity: 1, y: 0, filter: 'blur(0px)', duration: 1.1 * K.dur, ease: EASE,
           scrollTrigger: { trigger: p, start: 'top 92%', once: true } }));
     });
 
@@ -890,8 +896,8 @@
       document.querySelectorAll(boxSel).forEach(box => {
         const items = box.querySelectorAll(itemSel);
         if (!items.length) return;
-        REVEALS.push(G.fromTo(items, { opacity: 0, y: 26 }, {
-          opacity: 1, y: 0, duration: 0.95, ease: EASE, stagger: stagger,
+        REVEALS.push(G.fromTo(items, { opacity: 0, y: K.rise }, {
+          opacity: 1, y: 0, duration: 0.95 * K.dur, ease: EASE, stagger: stagger * K.stag,
           scrollTrigger: { trigger: box, start: 'top 85%', once: true },
           onComplete() { G.set(items, { clearProps: 'transform' }); }   // hover 스프링에 자리를 넘긴다
         }));
@@ -906,7 +912,7 @@
     /* ============================================================
        5. 스크롤 스크럽 하이라이트 — About 본문이 스크롤에 맞춰 또렷해진다
        ============================================================ */
-    document.querySelectorAll('#about .about-grid > div:last-child p').forEach(p => {
+    if (K.scrub) document.querySelectorAll('#about .about-grid > div:last-child p').forEach(p => {
       const words = splitWordsPlain(p);
       if (!words.length) return;
       G.set(words, { opacity: 0.16 });
@@ -922,7 +928,7 @@
        ============================================================ */
     let parallaxBuilt = false;
     function buildParallax() {
-      if (parallaxBuilt || !ST) return;
+      if (parallaxBuilt || !ST || !K.parallax) return;
       parallaxBuilt = true;
       const range = { trigger: '.hero', start: 'top top', end: 'bottom top', scrub: 0.5 };
       if (heroText)   G.to(heroText,   { yPercent: -16, opacity: 0.15, ease: 'none', scrollTrigger: range });
@@ -998,6 +1004,11 @@
     // 콘솔·자동화 테스트용 공개 API
     window.playAllAnimations = playAllAnimations;
     window.__anim = { heroTl, reveals: REVEALS, gsap: G, motion: MO, anime: AN };
+    window.__animStatus = GENTLE
+      ? 'gentle 모드 재생 중 (OS 애니메이션 효과 꺼짐 감지 — ?motion=on 으로 전체 연출)'
+      : '전체 연출 재생 중';
+    console.info('[anim] ' + window.__animStatus +
+                 ' | 리빌 ' + REVEALS.length + '개 | 강제 재생: playAllAnimations()');
 
     /* ---------- 시작 ---------- */
     root.classList.add('anim-on');
